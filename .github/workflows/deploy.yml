@@ -64,5 +64,13 @@ jobs:
 
       - name: Pedir para o servidor extrair o zip
         run: |
-          curl -sf -X POST "https://agenda.viavalesistemas.com.br/deploy-hook.php" \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}"
+          response=$(curl -s -w '\n%{http_code}' -X POST "https://agenda.viavalesistemas.com.br/deploy-hook.php" \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}")
+          status=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          echo "Status HTTP: $status"
+          echo "Resposta do servidor: $body"
+          if [ "$status" != "200" ]; then
+            echo "::error::deploy-hook.php respondeu $status"
+            exit 1
+          fi
