@@ -101,8 +101,22 @@ class BookingTest extends TestCase
 
         $slots = app(AvailabilityService::class)->slots($this->product, $this->staff, today(), today()->addWeek());
 
-        // min_notice_minutes = 60 por padrão: às 09:20, só o que começa às 10:20 ou depois vale.
-        $this->assertEquals(['10:30'], $slots[$this->monday('09:00')->toDateString()]->map->format('H:i')->all());
+        // min_notice_minutes = 10 por padrão: às 09:20, 09:30 fica exatamente nos 10 minutos (não vale, é estrito).
+        $this->assertEquals(['10:00', '10:30'], $slots[$this->monday('09:00')->toDateString()]->map->format('H:i')->all());
+    }
+
+    public function test_exactly_the_minimum_notice_is_not_enough(): void
+    {
+        // O caso do pedido original: agora 14:50, tentando marcar 15:00 — faltam exatamente 10 minutos, não pode.
+        $staff = Staff::create(['name' => 'Outro atendente']);
+        $staff->availabilityRules()->create(['weekday' => 1, 'start_time' => '14:00', 'end_time' => '18:00']);
+        $product = Product::create(['name' => 'Corte 2', 'duration_minutes' => 30]);
+
+        Carbon::setTestNow($this->monday('14:50'));
+        $this->assertFalse(app(AvailabilityService::class)->isAvailable($product, $staff, $this->monday('15:00')));
+
+        Carbon::setTestNow($this->monday('14:49'));
+        $this->assertTrue(app(AvailabilityService::class)->isAvailable($product, $staff, $this->monday('15:00')));
     }
 
     public function test_guest_sees_the_booking_page_with_product_and_available_times(): void

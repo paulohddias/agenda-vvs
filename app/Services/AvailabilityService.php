@@ -61,7 +61,8 @@ class AvailabilityService
                 while ($cursor->copy()->addMinutes($duration)->lte($close)) {
                     $slotEnd = $cursor->copy()->addMinutes($duration);
 
-                    if ($cursor->gte($earliest) && ! $this->overlapsAny($busy, $cursor, $slotEnd)) {
+                    // Estrito: faltando exatamente o mínimo (ex.: 10min) já não vale mais, tem que sobrar mais que isso.
+                    if ($cursor->gt($earliest) && ! $this->overlapsAny($busy, $cursor, $slotEnd)) {
                         $slots->push($cursor->copy());
                     }
 

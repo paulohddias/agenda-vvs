@@ -42,6 +42,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::patch('appointments/{appointment}/reagendar', [Admin\AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
 
     Route::resource('users', Admin\AdminUserController::class)->except('show');
+
+    Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 });
 
 require __DIR__.'/auth.php';

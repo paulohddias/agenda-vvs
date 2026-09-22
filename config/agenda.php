@@ -8,8 +8,8 @@ return [
     */
     'slot_step_minutes' => 30,
 
-    /* Antecedência mínima, em minutos, para o cliente marcar (evita marcar "para daqui a 5 minutos"). */
-    'min_notice_minutes' => 60,
+    /* Antecedência mínima, em minutos, para o cliente marcar (evita marcar de cima da hora). */
+    'min_notice_minutes' => 10,
 
     /* Quantos dias à frente o cliente consegue agendar. */
     'max_days_ahead' => 30,

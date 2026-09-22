@@ -317,4 +317,34 @@ class AdminPanelTest extends TestCase
         // 10:00 já está ocupado pelo $taken: o agendamento não deve ter se movido do horário original (11:00).
         $this->assertSame('11:00:00', $toMove->refresh()->starts_at->format('H:i:s'));
     }
+
+    public function test_admin_can_view_and_update_agenda_settings(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get(route('admin.settings.edit'))->assertOk();
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [
+            'min_notice_minutes' => 5, 'slot_step_minutes' => 15, 'max_days_ahead' => 10, 'cancel_min_hours' => 1,
+        ])->assertSessionHas('status');
+
+        $this->assertSame('5', \App\Models\Setting::allCached()['min_notice_minutes']);
+        $this->assertSame('15', \App\Models\Setting::allCached()['slot_step_minutes']);
+    }
+
+    public function test_agenda_settings_validation_rejects_out_of_range_values(): void
+    {
+        $this->actingAs($this->admin())->put(route('admin.settings.update'), [
+            'min_notice_minutes' => -1, 'slot_step_minutes' => 1, 'max_days_ahead' => 0, 'cancel_min_hours' => 999,
+        ])->assertSessionHasErrors(['min_notice_minutes', 'slot_step_minutes', 'max_days_ahead', 'cancel_min_hours']);
+    }
+
+    public function test_saved_setting_overrides_the_config_default(): void
+    {
+        \App\Models\Setting::set('min_notice_minutes', '5');
+
+        (new \App\Providers\AppServiceProvider($this->app))->boot();
+
+        $this->assertSame(5, config('agenda.min_notice_minutes'));
+    }
 }
