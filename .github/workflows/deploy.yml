@@ -1,12 +1,14 @@
 name: Deploy para a HostGator
 
 # Roda sempre que algo entra na branch main. Sem acesso SSH no servidor,
-# então isso só sincroniza arquivos por FTP — migrations novas do banco
-# ainda precisam ser rodadas manualmente (cron job de uma vez, como sempre).
+# então: builda o projeto, compacta tudo num zip só, sobe esse zip por FTP
+# (um arquivo, rápido — evita mandar milhares de arquivos do vendor um por um)
+# e chama um script (deploy-hook.php) que já está no servidor pra descompactar.
+# Migrations novas do banco ainda precisam ser rodadas manualmente (cron job).
 on:
   push:
     branches: [main]
-  workflow_dispatch: # também dá pra disparar manualmente pela aba Actions do GitHub
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -35,33 +37,32 @@ jobs:
           npm ci
           npm run build
 
-      - name: Enviar os arquivos por FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          server-dir: agenda/
-          local-dir: ./
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            .env
-            .env.*
-            **/*.md
-            phpunit.xml
-            package*.json
-            vite.config.js
-            postcss.config.js
-            tailwind.config.js
-            .editorconfig
-            .gitattributes
-            .npmrc
-            storage/logs/**
-            storage/framework/**
-            storage/app/private/appointment-documents/**
-            bootstrap/cache/**
+      - name: Compactar tudo num zip só
+        run: |
+          zip -r -q ../_deploy.zip . \
+            -x '.git/*' '.git/**' '.github/*' '.github/**' \
+            -x 'node_modules/*' 'node_modules/**' \
+            -x 'tests/*' 'tests/**' \
+            -x '.env' '.env.*' \
+            -x '*.md' \
+            -x 'phpunit.xml' 'package*.json' 'vite.config.js' 'postcss.config.js' 'tailwind.config.js' \
+            -x '.editorconfig' '.gitattributes' '.npmrc' \
+            -x 'storage/logs/*' 'storage/logs/**' \
+            -x 'storage/framework/*' 'storage/framework/**' \
+            -x 'storage/app/private/appointment-documents/*' 'storage/app/private/appointment-documents/**' \
+            -x 'bootstrap/cache/*' 'bootstrap/cache/**' \
+            -x 'public/deploy-hook.php'
+          mv ../_deploy.zip ./_deploy.zip
+          ls -lh _deploy.zip
+
+      - name: Enviar o zip por FTP (um arquivo só)
+        run: |
+          curl --ftp-create-dirs -T _deploy.zip \
+            "ftp://${{ secrets.FTP_HOST }}/agenda/_deploy.zip" \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            --connect-timeout 30 --max-time 300
+
+      - name: Pedir para o servidor extrair o zip
+        run: |
+          curl -sf -X POST "https://agenda.viavalesistemas.com.br/deploy-hook.php" \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}"
