@@ -27,7 +27,9 @@ $given = trim((string) ($_POST['token'] ?? $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? ''
 
 if ($expected === '' || ! hash_equals($expected, $given)) {
     http_response_code(403);
-    exit('Token invalido.');
+    // Diagnostico temporario: mostra só tamanho e pontas, nunca o valor inteiro.
+    $mask = fn (string $s) => $s === '' ? '(vazio)' : strlen($s).' chars, comeca "'.substr($s, 0, 4).'" termina "'.substr($s, -4).'"';
+    exit("Token invalido.\nEsperado: {$mask($expected)}\nRecebido: {$mask($given)}\nPOST bruto: ".substr(file_get_contents('php://input'), 0, 200));
 }
 
 $zipPath = __DIR__.'/../_deploy.zip';

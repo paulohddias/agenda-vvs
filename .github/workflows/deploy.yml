@@ -58,7 +58,7 @@ jobs:
       - name: Enviar o zip por FTP (um arquivo só)
         run: |
           curl --ftp-create-dirs -T _deploy.zip \
-            "ftp://${{ secrets.FTP_HOST }}/agenda/_deploy.zip" \
+            "ftp://${{ secrets.FTP_HOST }}/public_html/agenda/_deploy.zip" \
             --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
             --connect-timeout 30 --max-time 300
 
