@@ -21,7 +21,9 @@ if (! is_file($secretFile)) {
 }
 
 $expected = trim((string) file_get_contents($secretFile));
-$given = trim((string) ($_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? ''));
+// Manda no corpo do POST (campo "token"), não num header customizado — alguns
+// firewalls (Mod_Security) desconfiam de headers fora do padrão.
+$given = trim((string) ($_POST['token'] ?? $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? ''));
 
 if ($expected === '' || ! hash_equals($expected, $given)) {
     http_response_code(403);

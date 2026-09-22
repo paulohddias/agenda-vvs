@@ -65,7 +65,8 @@ jobs:
       - name: Pedir para o servidor extrair o zip
         run: |
           response=$(curl -s -w '\n%{http_code}' -X POST "https://agenda.viavalesistemas.com.br/deploy-hook.php" \
-            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}")
+            -A "Mozilla/5.0 (compatible; AgendaVvsDeploy/1.0)" \
+            --data-urlencode "token=${{ secrets.DEPLOY_TOKEN }}")
           status=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
           echo "Status HTTP: $status"
