@@ -1,0 +1,67 @@
+name: Deploy para a HostGator
+
+# Roda sempre que algo entra na branch main. Sem acesso SSH no servidor,
+# então isso só sincroniza arquivos por FTP — migrations novas do banco
+# ainda precisam ser rodadas manualmente (cron job de uma vez, como sempre).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # também dá pra disparar manualmente pela aba Actions do GitHub
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Instalar dependências do PHP (sem as de desenvolvimento)
+        run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Instalar dependências do front e gerar os arquivos (CSS/JS)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Enviar os arquivos por FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          server-dir: agenda/
+          local-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/node_modules/**
+            **/tests/**
+            .env
+            .env.*
+            **/*.md
+            phpunit.xml
+            package*.json
+            vite.config.js
+            postcss.config.js
+            tailwind.config.js
+            .editorconfig
+            .gitattributes
+            .npmrc
+            storage/logs/**
+            storage/framework/**
+            storage/app/private/appointment-documents/**
+            bootstrap/cache/**
