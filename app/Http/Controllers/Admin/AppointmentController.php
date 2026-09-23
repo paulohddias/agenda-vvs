@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AppointmentChanged;
 use App\Models\Appointment;
 use App\Models\Staff;
 use App\Services\AvailabilityService;
@@ -10,6 +11,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -179,7 +182,19 @@ class AppointmentController extends Controller
             'status' => ['required', Rule::in(array_keys(Appointment::STATUS_LABELS))],
         ]);
 
+        $previousStatus = $appointment->status;
         $appointment->update($data);
+
+        // Só avisa o cliente de mudanças que interessam a ele, e só se o status mudou de fato.
+        $change = match ($appointment->status) {
+            Appointment::STATUS_CONFIRMED => AppointmentChanged::CONFIRMED,
+            Appointment::STATUS_CANCELLED => AppointmentChanged::CANCELLED,
+            default => null,
+        };
+
+        if ($change && $appointment->status !== $previousStatus) {
+            $this->notifyCustomer($appointment, $change);
+        }
 
         return back()->with('status', 'Agendamento marcado como '.mb_strtolower($appointment->statusLabel()).'.');
     }
@@ -199,12 +214,36 @@ class AppointmentController extends Controller
             return back()->with('error', 'Esse novo horário não está disponível.');
         }
 
+        $previousStart = $appointment->starts_at->copy();
+
         $appointment->update([
             'starts_at' => $newStart,
             'ends_at' => $newStart->copy()->addMinutes($appointment->product->duration_minutes),
         ]);
 
+        if (! $previousStart->equalTo($newStart)) {
+            $this->notifyCustomer($appointment, AppointmentChanged::RESCHEDULED, $previousStart);
+        }
+
         return back()->with('status', 'Agendamento reagendado para '.$newStart->translatedFormat('d/m/Y \à\s H:i').'.');
+    }
+
+    /**
+     * Falha no envio (SMTP fora do ar, por exemplo) não desfaz a alteração, que já foi salva —
+     * só fica no log para dar pra investigar depois.
+     */
+    private function notifyCustomer(Appointment $appointment, string $change, ?Carbon $previousStart = null): void
+    {
+        if (! $appointment->holder_email) {
+            return;
+        }
+
+        try {
+            $appointment->loadMissing('product');
+            Mail::to($appointment->holder_email)->send(new AppointmentChanged($appointment, $change, $previousStart));
+        } catch (\Throwable $e) {
+            Log::error("Falha ao enviar e-mail ({$change}) do agendamento #{$appointment->id}: ".$e->getMessage());
+        }
     }
 
     public function downloadDocument(Appointment $appointment): StreamedResponse

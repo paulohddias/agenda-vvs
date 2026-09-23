@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Mail\AppointmentChanged;
 use App\Models\Appointment;
 use App\Models\BlockedPeriod;
 use App\Models\Product;
@@ -9,6 +10,7 @@ use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AdminPanelTest extends TestCase
@@ -259,6 +261,62 @@ class AdminPanelTest extends TestCase
             ->assertOk()->assertSee('Cliente Teste');
         $this->actingAs($admin)->get(route('admin.appointments.index', ['day' => $day->toDateString(), 'status' => 'cancelled']))
             ->assertOk()->assertDontSee('Cliente Teste');
+    }
+
+    public function test_customer_is_emailed_when_admin_confirms_cancels_or_reschedules(): void
+    {
+        Mail::fake();
+        $staff = Staff::create(['name' => 'Atendimento']);
+        $newDay = now()->addDays(2);
+        $staff->availabilityRules()->create(['weekday' => $newDay->dayOfWeek, 'start_time' => '09:00', 'end_time' => '18:00']);
+        $product = Product::create(['name' => 'e-CNPJ A1', 'duration_minutes' => 30]);
+        $appointment = Appointment::create([
+            'product_id' => $product->id, 'staff_id' => $staff->id,
+            'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addMinutes(30),
+            'status' => Appointment::STATUS_PENDING,
+            'holder_name' => 'Cliente Teste', 'holder_email' => 'cliente@example.com',
+        ]);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->patch(route('admin.appointments.update', $appointment), ['status' => 'confirmed']);
+        Mail::assertSent(AppointmentChanged::class, fn ($mail) => $mail->hasTo('cliente@example.com')
+            && $mail->change === AppointmentChanged::CONFIRMED);
+
+        $this->actingAs($admin)->patch(route('admin.appointments.reschedule', $appointment), [
+            'reschedule_date' => $newDay->toDateString(), 'reschedule_time' => '10:00',
+        ]);
+        Mail::assertSent(AppointmentChanged::class, function ($mail) use ($newDay) {
+            $html = $mail->render();
+
+            return $mail->change === AppointmentChanged::RESCHEDULED
+                && str_contains($html, 'Horário anterior')
+                && str_contains($html, $newDay->format('d/m/Y'));
+        });
+
+        $this->actingAs($admin)->patch(route('admin.appointments.update', $appointment), ['status' => 'cancelled']);
+        Mail::assertSent(AppointmentChanged::class, fn ($mail) => $mail->change === AppointmentChanged::CANCELLED
+            && str_contains($mail->render(), 'Cancelado'));
+
+        Mail::assertSentCount(3);
+    }
+
+    public function test_customer_is_not_emailed_when_appointment_is_completed_or_status_is_unchanged(): void
+    {
+        Mail::fake();
+        $staff = Staff::create(['name' => 'Atendimento']);
+        $product = Product::create(['name' => 'Corte', 'duration_minutes' => 30]);
+        $appointment = Appointment::create([
+            'product_id' => $product->id, 'staff_id' => $staff->id,
+            'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addMinutes(30),
+            'status' => Appointment::STATUS_CONFIRMED,
+            'holder_name' => 'Cliente Teste', 'holder_email' => 'cliente@example.com',
+        ]);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->patch(route('admin.appointments.update', $appointment), ['status' => 'confirmed']);
+        $this->actingAs($admin)->patch(route('admin.appointments.update', $appointment), ['status' => 'completed']);
+
+        Mail::assertNothingSent();
     }
 
     public function test_admin_can_view_the_agenda_as_day_week_or_month(): void

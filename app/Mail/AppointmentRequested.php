@@ -32,8 +32,17 @@ class AppointmentRequested extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.appointment-requested',
-            with: ['appointment' => $this->appointment],
+            view: 'emails.appointment',
+            with: [
+                'appointment' => $this->appointment,
+                'title' => 'Agendamento confirmado',
+                'badge' => 'Horário confirmado',
+                'badgeClass' => '',
+                'intro' => 'Seu agendamento para emissão de certificado digital está confirmado. Confira os detalhes abaixo:',
+                'closing' => 'Seu horário já está <strong>reservado</strong>. Esperamos por você!',
+                'previousStart' => null,
+                'cancelled' => false,
+            ],
         );
     }
 }
