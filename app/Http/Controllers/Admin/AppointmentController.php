@@ -31,7 +31,7 @@ class AppointmentController extends Controller
             'status' => ['nullable', Rule::in(array_keys(Appointment::STATUS_LABELS))],
         ]);
 
-        $view = $filters['view'] ?? 'day';
+        $view = $filters['view'] ?? 'week';
         $day = isset($filters['day']) ? Carbon::parse($filters['day']) : today();
         $status = $filters['status'] ?? null;
 
