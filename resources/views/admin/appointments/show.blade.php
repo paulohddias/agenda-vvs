@@ -10,6 +10,8 @@
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <x-flash />
 
+            <x-whatsapp-links :appointment="$appointment" />
+
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="font-medium text-gray-800 mb-3">Atendimento</h3>
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">

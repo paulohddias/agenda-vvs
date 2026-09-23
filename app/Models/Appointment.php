@@ -69,6 +69,49 @@ class Appointment extends Model
             : preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $d);
     }
 
+    public const WHATSAPP_CONFIRM = 'confirm';
+    public const WHATSAPP_REMIND = 'remind';
+
+    /**
+     * Link que abre o WhatsApp (app ou web) já na conversa com o cliente e com a mensagem
+     * escrita — a equipe só aperta enviar. Não manda nada sozinho: é o "click to chat" gratuito.
+     * Null se o agendamento não tiver telefone.
+     */
+    public function whatsappUrl(string $purpose): ?string
+    {
+        $phone = preg_replace('/\D/', '', (string) $this->holder_phone);
+
+        if (strlen($phone) < 10) {
+            return null;
+        }
+
+        $when = $this->starts_at->translatedFormat('d/m/Y (l)').' às '.$this->starts_at->format('H:i');
+
+        if ($purpose === self::WHATSAPP_REMIND) {
+            $day = match (true) {
+                $this->starts_at->isToday() => 'hoje',
+                $this->starts_at->isTomorrow() => 'amanhã',
+                default => 'no dia '.$this->starts_at->translatedFormat('d/m (l)'),
+            };
+            $intro = "Olá, {$this->holder_name}! Passando para lembrar do seu agendamento na Via Vale Sistemas: "
+                ."{$this->product->name}, {$day} às {$this->starts_at->format('H:i')}.";
+        } else {
+            $intro = "Olá, {$this->holder_name}! Aqui é da Via Vale Sistemas. Seu agendamento está confirmado:\n\n"
+                ."Serviço: {$this->product->name}\n"
+                ."Data: {$when}\n"
+                .'Validação: '.$this->validationMethodLabel();
+        }
+
+        $instructions = $this->validation_method === self::VALIDATION_VIDEOCONFERENCIA
+            ? 'Como a validação é por videoconferência, envie aqui a foto da CNH aberta (frente e verso) antes do horário.'
+            : 'Chegue com 10 minutos de antecedência e traga documento original com foto (CNH ou RG) e os documentos da empresa. '
+                .'Endereço: Rua Leopoldo Macedo, 349, Sala 01, Ponte Alta, Aparecida - SP.';
+
+        $text = $intro."\n\n".$instructions."\n\nQualquer dúvida, é só responder esta mensagem.";
+
+        return 'https://wa.me/55'.$phone.'?text='.rawurlencode($text);
+    }
+
     /** Tudo que o modal de detalhes do painel admin precisa, prontinho para virar JSON. */
     public function toCalendarPayload(): array
     {
@@ -91,6 +134,8 @@ class Appointment extends Model
             'documentUrl' => $this->document_path ? route('admin.appointments.document', $this) : null,
             'updateUrl' => route('admin.appointments.update', $this),
             'rescheduleUrl' => route('admin.appointments.reschedule', $this),
+            'whatsappConfirmUrl' => $this->whatsappUrl(self::WHATSAPP_CONFIRM),
+            'whatsappRemindUrl' => $this->whatsappUrl(self::WHATSAPP_REMIND),
         ];
     }
 

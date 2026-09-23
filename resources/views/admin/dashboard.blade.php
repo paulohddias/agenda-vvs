@@ -26,7 +26,15 @@
                             <div class="text-sm font-medium text-gray-900">{{ $appointment->starts_at->format('d/m/Y H:i') }} · {{ $appointment->product->name }}</div>
                             <div class="text-sm text-gray-500">{{ $appointment->holder_name }} · {{ $appointment->holderPhoneFormatted() }}</div>
                         </div>
-                        <x-status-badge :appointment="$appointment" />
+                        <div class="flex items-center gap-3">
+                            @if ($url = $appointment->whatsappUrl('remind'))
+                                <a href="{{ $url }}" target="_blank" rel="noopener" title="Lembrar pelo WhatsApp"
+                                   class="inline-flex items-center gap-1 text-sm font-medium text-green-700 hover:underline">
+                                    <x-whatsapp-icon /> Lembrar
+                                </a>
+                            @endif
+                            <x-status-badge :appointment="$appointment" />
+                        </div>
                     </div>
                 @empty
                     <div class="px-6 py-8 text-center text-sm text-gray-500">Nenhum agendamento futuro.</div>

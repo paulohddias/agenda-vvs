@@ -33,6 +33,20 @@
         </template>
 
         <div class="mt-5 pt-4 border-t border-gray-100 space-y-4">
+            {{-- Abrem o WhatsApp com a mensagem pronta; a equipe só aperta enviar. --}}
+            <template x-if="appt.whatsappRemindUrl && (appt.status === 'pending' || appt.status === 'confirmed')">
+                <div class="flex flex-wrap gap-2">
+                    <a :href="appt.whatsappConfirmUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 rounded-md bg-[#25D366] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1ebe5a]">
+                        <x-whatsapp-icon /> Confirmar pelo WhatsApp
+                    </a>
+                    <a :href="appt.whatsappRemindUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 rounded-md border border-[#25D366] px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50">
+                        <x-whatsapp-icon /> Lembrar pelo WhatsApp
+                    </a>
+                </div>
+            </template>
+
             <div class="flex gap-4 flex-wrap">
                 <template x-if="appt.status === 'pending'">
                     <form method="POST" :action="appt.updateUrl">

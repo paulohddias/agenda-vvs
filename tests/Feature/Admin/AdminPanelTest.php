@@ -319,6 +319,33 @@ class AdminPanelTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    public function test_whatsapp_links_open_a_chat_with_the_customer_and_a_ready_message(): void
+    {
+        $staff = Staff::create(['name' => 'Atendimento']);
+        $product = Product::create(['name' => 'e-CPF A1', 'duration_minutes' => 30]);
+        $appointment = Appointment::create([
+            'product_id' => $product->id, 'staff_id' => $staff->id,
+            'starts_at' => now()->addDay()->setTime(10, 0), 'ends_at' => now()->addDay()->setTime(10, 30),
+            'status' => Appointment::STATUS_CONFIRMED, 'validation_method' => Appointment::VALIDATION_PRESENCIAL,
+            'holder_name' => 'Cliente Teste', 'holder_phone' => '12912345678',
+        ]);
+
+        $remind = $appointment->whatsappUrl(Appointment::WHATSAPP_REMIND);
+        $this->assertStringStartsWith('https://wa.me/5512912345678?text=', $remind);
+        $text = rawurldecode(explode('?text=', $remind)[1]);
+        $this->assertStringContainsString('Cliente Teste', $text);
+        $this->assertStringContainsString('amanhã às 10:00', $text);
+        $this->assertStringContainsString('Rua Leopoldo Macedo', $text);
+
+        $this->assertStringContainsString('está confirmado', rawurldecode($appointment->whatsappUrl(Appointment::WHATSAPP_CONFIRM)));
+
+        $this->actingAs($this->admin())->get(route('admin.appointments.show', $appointment))
+            ->assertOk()->assertSee('Lembrar pelo WhatsApp');
+
+        $appointment->update(['holder_phone' => null]);
+        $this->assertNull($appointment->whatsappUrl(Appointment::WHATSAPP_REMIND));
+    }
+
     public function test_admin_can_view_the_agenda_as_day_week_or_month(): void
     {
         $admin = $this->admin();
