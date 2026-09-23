@@ -104,7 +104,7 @@ class Appointment extends Model
 
         $instructions = $this->validation_method === self::VALIDATION_VIDEOCONFERENCIA
             ? 'Como a validação é por videoconferência, envie aqui a foto da CNH aberta (frente e verso) antes do horário.'
-            : 'Chegue com 10 minutos de antecedência e traga documento original com foto (CNH ou RG) e os documentos da empresa. '
+            : 'Chegue com 10 minutos de antecedência e traga documento original com foto (CNH ou RG). '
                 .'Endereço: Rua Leopoldo Macedo, 349, Sala 01, Ponte Alta, Aparecida - SP.';
 
         $text = $intro."\n\n".$instructions."\n\nQualquer dúvida, é só responder esta mensagem.";
