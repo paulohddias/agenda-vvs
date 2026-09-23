@@ -8,6 +8,7 @@ use App\Models\Appointment;
 use App\Models\Product;
 use App\Models\Staff;
 use App\Services\AvailabilityService;
+use App\Services\ReceitaWsService;
 use App\Support\DocumentValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -112,10 +113,11 @@ class BookingController extends Controller
     }
 
     /**
-     * Se esse CPF/CNPJ já agendou antes, devolve nome, e-mail e contador do agendamento
-     * mais recente, para o formulário se preencher solto. Não expõe telefone nem o documento.
+     * Se esse CPF/CNPJ já agendou antes, devolve nome, e-mail, telefone e contador do
+     * agendamento mais recente, para o formulário se preencher sozinho. Se nunca agendou
+     * e for CNPJ, devolve só a razão social consultada na ReceitaWS.
      */
-    public function lookupByDocument(Request $request): JsonResponse
+    public function lookupByDocument(Request $request, ReceitaWsService $receitaWs): JsonResponse
     {
         $digits = preg_replace('/\D/', '', (string) $request->input('holder_document'));
 
@@ -128,7 +130,11 @@ class BookingController extends Controller
             ->first(['holder_name', 'holder_email', 'holder_phone', 'accountant_name']);
 
         if (! $appointment) {
-            return response()->json(['found' => false]);
+            $companyName = $receitaWs->companyName($digits);
+
+            return response()->json($companyName
+                ? ['found' => true, 'holder_name' => $companyName]
+                : ['found' => false]);
         }
 
         return response()->json([

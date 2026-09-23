@@ -10,6 +10,7 @@ use App\Models\Staff;
 use App\Services\AvailabilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -248,6 +249,43 @@ class BookingTest extends TestCase
 
         $this->postJson(route('booking.lookup'), ['holder_document' => '111.111.111-11'])
             ->assertOk()->assertJson(['found' => false]);
+    }
+
+    public function test_document_lookup_brings_company_name_from_receitaws_for_new_cnpj(): void
+    {
+        config(['services.receitaws.token' => 'token-teste']);
+        Http::fake([
+            'receitaws.com.br/*' => Http::response(['status' => 'OK', 'nome' => 'BANCO DO BRASIL SA', 'email' => 'x@bb.com.br']),
+        ]);
+
+        $this->postJson(route('booking.lookup'), ['holder_document' => '00.000.000/0001-91'])
+            ->assertOk()
+            ->assertExactJson(['found' => true, 'holder_name' => 'BANCO DO BRASIL SA']);
+
+        Http::assertSent(fn ($request) => $request->url() === 'https://receitaws.com.br/v1/cnpj/00000000000191'
+            && $request->hasHeader('Authorization', 'Bearer token-teste'));
+    }
+
+    public function test_document_lookup_reports_not_found_when_receitaws_fails(): void
+    {
+        config(['services.receitaws.token' => 'token-teste']);
+        Http::fake([
+            'receitaws.com.br/*' => Http::response(['status' => 'ERROR', 'message' => 'CNPJ inválido']),
+        ]);
+
+        $this->postJson(route('booking.lookup'), ['holder_document' => '00.000.000/0001-91'])
+            ->assertOk()->assertJson(['found' => false]);
+    }
+
+    public function test_document_lookup_does_not_query_receitaws_for_cpf(): void
+    {
+        config(['services.receitaws.token' => 'token-teste']);
+        Http::fake();
+
+        $this->postJson(route('booking.lookup'), ['holder_document' => '111.444.777-35'])
+            ->assertOk()->assertJson(['found' => false]);
+
+        Http::assertNothingSent();
     }
 
     public function test_cannot_double_book_a_taken_slot(): void
