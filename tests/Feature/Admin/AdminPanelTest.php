@@ -336,6 +336,7 @@ class AdminPanelTest extends TestCase
         $this->assertStringContainsString('Cliente Teste', $text);
         $this->assertStringContainsString('amanhã às 10:00', $text);
         $this->assertStringContainsString('Rua Leopoldo Macedo', $text);
+        $this->assertStringContainsString('https://www.google.com/maps?cid=17307561992857966510', $text);
 
         $this->assertStringContainsString('está confirmado', rawurldecode($appointment->whatsappUrl(Appointment::WHATSAPP_CONFIRM)));
 
