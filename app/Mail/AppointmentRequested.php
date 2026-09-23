@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Enviado ao cliente assim que o agendamento é solicitado (status "pendente").
+ * Enviado ao cliente assim que o agendamento é feito (já nasce confirmado).
  * Não é fila (ShouldQueue): a hospedagem compartilhada não garante um worker de fila
  * rodando o tempo todo, então enviamos na hora mesmo, direto do request.
  */
@@ -25,7 +25,7 @@ class AppointmentRequested extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Agendamento solicitado — Via Vale Sistemas',
+            subject: 'Agendamento confirmado — Via Vale Sistemas',
         );
     }
 

@@ -169,7 +169,7 @@ class BookingController extends Controller
                 'staff_id' => $staff->id,
                 'starts_at' => $start,
                 'ends_at' => $start->copy()->addMinutes($product->duration_minutes),
-                'status' => Appointment::STATUS_PENDING,
+                'status' => Appointment::STATUS_CONFIRMED, // já reservado, sem esperar a equipe confirmar
                 'notes' => $data['notes'] ?? null,
                 'holder_name' => $data['holder_name'],
                 'holder_document' => $data['holder_document'],
@@ -194,7 +194,7 @@ class BookingController extends Controller
         $this->sendConfirmationEmail($appointment);
 
         return redirect()->route('home')
-            ->with('status', 'Agendamento solicitado para '.$start->translatedFormat('d/m/Y \à\s H:i').'.');
+            ->with('status', 'Agendamento confirmado para '.$start->translatedFormat('d/m/Y \à\s H:i').'.');
     }
 
     /**

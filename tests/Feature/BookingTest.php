@@ -135,7 +135,7 @@ class BookingTest extends TestCase
 
         $appointment = Appointment::firstOrFail();
         $this->assertNull($appointment->user_id);
-        $this->assertSame(Appointment::STATUS_PENDING, $appointment->status);
+        $this->assertSame(Appointment::STATUS_CONFIRMED, $appointment->status);
         $this->assertTrue($appointment->starts_at->equalTo($start));
         $this->assertSame('Maria Souza', $appointment->holder_name);
         $this->assertSame('11144477735', $appointment->holder_document); // gravado só com dígitos

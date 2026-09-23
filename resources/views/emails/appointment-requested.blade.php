@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agendamento solicitado</title>
+<title>Agendamento confirmado</title>
 <style>
     body { margin: 0; padding: 0; background: #f3f4f6; font-family: Arial, Helvetica, sans-serif; color: #1f2937; }
     .wrapper { max-width: 560px; margin: 0 auto; padding: 24px 16px; }
@@ -16,7 +16,7 @@
     table.details td { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
     table.details td.label { color: #6b7280; width: 40%; }
     table.details td.value { color: #111827; font-weight: bold; text-align: right; }
-    .badge { display: inline-block; background: #fef3c7; color: #92400e; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 999px; }
+    .badge { display: inline-block; background: #dcfce7; color: #166534; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 999px; }
     .notice { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 14px 16px; font-size: 13px; color: #92400e; margin: 16px 0; }
     .footer { text-align: center; font-size: 12px; color: #9ca3af; padding: 20px 0; }
 </style>
@@ -29,9 +29,9 @@
             <img src="{{ $message->embed(public_path('images/logo-vvs.png')) }}" alt="Via Vale Sistemas">
         </div>
         <div class="card">
-            <span class="badge">Pendente de confirmação</span>
+            <span class="badge">Horário confirmado</span>
             <h1 style="margin-top:12px;">Olá, {{ $appointment->holder_name }}!</h1>
-            <p>Recebemos sua solicitação de agendamento para emissão de certificado digital. Confira os detalhes abaixo:</p>
+            <p>Seu agendamento para emissão de certificado digital está confirmado. Confira os detalhes abaixo:</p>
 
             <table class="details">
                 <tr><td class="label">Serviço</td><td class="value">{{ $appointment->product->name }}</td></tr>
@@ -40,7 +40,7 @@
                 <tr><td class="label">Forma de validação</td><td class="value">{{ $appointment->validationMethodLabel() }}</td></tr>
             </table>
 
-            <p>Seu horário está <strong>reservado, mas ainda pendente de confirmação</strong>. Você receberá um novo e-mail quando ele for confirmado pela nossa equipe.</p>
+            <p>Seu horário já está <strong>reservado</strong>. Esperamos por você!</p>
 
             <div class="notice">
                 <strong>Documentação obrigatória:</strong> compareça com 10 minutos de antecedência e leve um documento original com foto — CNH (obrigatória) ou RG — além dos documentos da empresa (Requerimento ou Contrato Social).
