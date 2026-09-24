@@ -47,8 +47,9 @@
                 </div>
             </template>
 
-            <div class="flex gap-4 flex-wrap">
-                <a :href="appt.editUrl" class="text-sm font-medium text-gray-700 hover:underline">Editar dados</a>
+            {{-- text-sm no container: os forms dos botões herdam a mesma altura de linha do link e ficam alinhados. --}}
+            <div class="flex items-center gap-4 flex-wrap text-sm">
+                <a :href="appt.editUrl" class="text-sm font-medium text-brand-blue hover:underline">Editar dados</a>
                 <template x-if="appt.status === 'pending'">
                     <form method="POST" :action="appt.updateUrl">
                         @csrf @method('PATCH')
