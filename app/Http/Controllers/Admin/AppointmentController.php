@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateAppointmentDetailsRequest;
 use App\Mail\AppointmentChanged;
 use App\Models\Appointment;
 use App\Models\Staff;
@@ -174,6 +175,34 @@ class AppointmentController extends Controller
         $appointment->load('product');
 
         return view('admin.appointments.show', ['appointment' => $appointment]);
+    }
+
+    public function edit(Appointment $appointment): View
+    {
+        $appointment->load('product');
+
+        return view('admin.appointments.edit', ['appointment' => $appointment]);
+    }
+
+    /** Corrige os dados do cliente. Data e horário mudam pelo reagendamento, não aqui. */
+    public function updateDetails(UpdateAppointmentDetailsRequest $request, Appointment $appointment): RedirectResponse
+    {
+        $data = $request->safe()->except('document');
+
+        if ($request->hasFile('document')) {
+            $oldPath = $appointment->document_path;
+            $data['document_path'] = $request->file('document')->store('appointment-documents', 'local');
+
+            if ($oldPath) {
+                Storage::disk('local')->delete($oldPath);
+            }
+        }
+
+        $appointment->update($data);
+
+        return redirect()
+            ->route('admin.appointments.index', ['view' => 'week', 'day' => $appointment->starts_at->toDateString()])
+            ->with('status', 'Dados do agendamento de '.$appointment->holder_name.' atualizados.');
     }
 
     public function update(Request $request, Appointment $appointment): RedirectResponse

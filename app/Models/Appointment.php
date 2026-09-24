@@ -135,6 +135,7 @@ class Appointment extends Model
             'documentUrl' => $this->document_path ? route('admin.appointments.document', $this) : null,
             'updateUrl' => route('admin.appointments.update', $this),
             'rescheduleUrl' => route('admin.appointments.reschedule', $this),
+            'editUrl' => route('admin.appointments.edit', $this),
             'whatsappConfirmUrl' => $this->whatsappUrl(self::WHATSAPP_CONFIRM),
             'whatsappRemindUrl' => $this->whatsappUrl(self::WHATSAPP_REMIND),
         ];

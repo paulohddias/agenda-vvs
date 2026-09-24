@@ -39,6 +39,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('appointments/{appointment}', [Admin\AppointmentController::class, 'show'])->name('appointments.show');
     Route::get('appointments/{appointment}/documento', [Admin\AppointmentController::class, 'downloadDocument'])->name('appointments.document');
     Route::patch('appointments/{appointment}', [Admin\AppointmentController::class, 'update'])->name('appointments.update');
+    Route::get('appointments/{appointment}/editar', [Admin\AppointmentController::class, 'edit'])->name('appointments.edit');
+    Route::put('appointments/{appointment}/dados', [Admin\AppointmentController::class, 'updateDetails'])->name('appointments.update-details');
     Route::patch('appointments/{appointment}/reagendar', [Admin\AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
 
     Route::resource('users', Admin\AdminUserController::class)->except('show');

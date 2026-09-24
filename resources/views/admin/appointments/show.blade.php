@@ -47,7 +47,10 @@
                 </div>
             </div>
 
-            <a href="{{ route('admin.appointments.index') }}" class="text-sm text-gray-600 hover:underline">&larr; Voltar à lista</a>
+            <div class="flex items-center justify-between">
+                <a href="{{ route('admin.appointments.index') }}" class="text-sm text-gray-600 hover:underline">&larr; Voltar à lista</a>
+                <a href="{{ route('admin.appointments.edit', $appointment) }}" class="rounded-md bg-brand-slate px-3 py-1.5 text-white text-sm hover:bg-brand-blue">Editar dados</a>
+            </div>
         </div>
     </div>
 </x-app-layout>

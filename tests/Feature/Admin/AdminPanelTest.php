@@ -9,8 +9,10 @@ use App\Models\Product;
 use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminPanelTest extends TestCase
@@ -345,6 +347,53 @@ class AdminPanelTest extends TestCase
 
         $appointment->update(['holder_phone' => null]);
         $this->assertNull($appointment->whatsappUrl(Appointment::WHATSAPP_REMIND));
+    }
+
+    public function test_admin_can_edit_the_customer_details_of_an_appointment(): void
+    {
+        Storage::fake('local');
+        $staff = Staff::create(['name' => 'Atendimento']);
+        $product = Product::create(['name' => 'e-CNPJ A1', 'duration_minutes' => 30]);
+        $start = now()->addDay()->setTime(10, 0);
+        $appointment = Appointment::create([
+            'product_id' => $product->id, 'staff_id' => $staff->id,
+            'starts_at' => $start, 'ends_at' => $start->copy()->addMinutes(30),
+            'status' => Appointment::STATUS_CONFIRMED, 'validation_method' => Appointment::VALIDATION_PRESENCIAL,
+            'holder_name' => 'Nome Errado', 'holder_document' => '11144477735',
+            'holder_email' => 'errado@example.com', 'holder_phone' => '12912345678',
+            'document_path' => 'appointment-documents/antigo.pdf',
+        ]);
+        Storage::disk('local')->put('appointment-documents/antigo.pdf', 'x');
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get(route('admin.appointments.edit', $appointment))
+            ->assertOk()->assertSee('Nome Errado')->assertSee('111.444.777-35');
+
+        $this->actingAs($admin)->put(route('admin.appointments.update-details', $appointment), [
+            'holder_name' => 'Empresa Certa Ltda',
+            'holder_document' => '00.000.000/0001-91',
+            'holder_email' => 'certo@example.com',
+            'holder_phone' => '(12) 3600-5110',
+            'accountant_name' => 'Contabilidade X',
+            'validation_method' => Appointment::VALIDATION_VIDEOCONFERENCIA,
+            'notes' => 'Corrigido por telefone',
+            'document' => UploadedFile::fake()->create('cnh.pdf', 100, 'application/pdf'),
+        ])->assertRedirect()->assertSessionHas('status');
+
+        $appointment->refresh();
+        $this->assertSame('Empresa Certa Ltda', $appointment->holder_name);
+        $this->assertSame('00000000000191', $appointment->holder_document);
+        $this->assertSame('1236005110', $appointment->holder_phone);
+        $this->assertSame(Appointment::VALIDATION_VIDEOCONFERENCIA, $appointment->validation_method);
+        $this->assertTrue($appointment->starts_at->equalTo($start)); // horário não muda por aqui
+        $this->assertNotSame('appointment-documents/antigo.pdf', $appointment->document_path);
+        Storage::disk('local')->assertMissing('appointment-documents/antigo.pdf');
+        Storage::disk('local')->assertExists($appointment->document_path);
+
+        $this->actingAs($admin)->put(route('admin.appointments.update-details', $appointment), [
+            'holder_name' => '', 'holder_document' => '111.111.111-11', 'holder_email' => 'x',
+            'holder_phone' => '123', 'validation_method' => 'outro',
+        ])->assertSessionHasErrors(['holder_name', 'holder_document', 'holder_email', 'holder_phone', 'validation_method']);
     }
 
     public function test_admin_can_view_the_agenda_as_day_week_or_month(): void
