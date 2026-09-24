@@ -8,12 +8,11 @@ use App\Mail\AppointmentChanged;
 use App\Models\Appointment;
 use App\Models\Staff;
 use App\Services\AvailabilityService;
+use App\Services\CustomerNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -257,22 +256,9 @@ class AppointmentController extends Controller
         return back()->with('status', 'Agendamento reagendado para '.$newStart->translatedFormat('d/m/Y \à\s H:i').'.');
     }
 
-    /**
-     * Falha no envio (SMTP fora do ar, por exemplo) não desfaz a alteração, que já foi salva —
-     * só fica no log para dar pra investigar depois.
-     */
     private function notifyCustomer(Appointment $appointment, string $change, ?Carbon $previousStart = null): void
     {
-        if (! $appointment->holder_email) {
-            return;
-        }
-
-        try {
-            $appointment->loadMissing('product');
-            Mail::to($appointment->holder_email)->send(new AppointmentChanged($appointment, $change, $previousStart));
-        } catch (\Throwable $e) {
-            Log::error("Falha ao enviar e-mail ({$change}) do agendamento #{$appointment->id}: ".$e->getMessage());
-        }
+        app(CustomerNotifier::class)->changed($appointment, $change, $previousStart);
     }
 
     public function downloadDocument(Appointment $appointment): StreamedResponse

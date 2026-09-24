@@ -14,7 +14,7 @@ return [
     /* Quantos dias à frente o cliente consegue agendar. */
     'max_days_ahead' => 30,
 
-    /* O cliente só pode cancelar sozinho até X horas antes do horário marcado. */
+    /* O cliente só pode reagendar sozinho (link do e-mail/WhatsApp) até X horas antes do horário marcado. */
     'cancel_min_hours' => 2,
 
 ];

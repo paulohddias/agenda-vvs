@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CustomerRescheduleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,11 @@ Route::post('/agendar', [BookingController::class, 'store'])->name('booking.stor
 Route::post('/agendar/consulta-documento', [BookingController::class, 'lookupByDocument'])
     ->middleware('throttle:20,1')
     ->name('booking.lookup');
+
+// Reagendamento pelo próprio cliente, pelo link assinado do e-mail/WhatsApp (sem login).
+Route::match(['get', 'post'], '/agendamento/{appointment}/reagendar', [CustomerRescheduleController::class, 'handle'])
+    ->middleware('throttle:30,1')
+    ->name('booking.reschedule');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -32,7 +32,7 @@
                 </div>
 
                 <div>
-                    <x-input-label for="cancel_min_hours" value="Prazo mínimo para o cliente cancelar sozinho (horas)" />
+                    <x-input-label for="cancel_min_hours" value="Prazo mínimo para o cliente reagendar sozinho pelo link (horas antes do atendimento)" />
                     <x-text-input id="cancel_min_hours" name="cancel_min_hours" type="number" min="0" max="168" class="block mt-1 w-40" :value="old('cancel_min_hours', $cancelMinHours)" required />
                     <x-input-error :messages="$errors->get('cancel_min_hours')" class="mt-2" />
                 </div>

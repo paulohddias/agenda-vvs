@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\URL;
 
 #[Fillable([
     'user_id', 'product_id', 'staff_id', 'starts_at', 'ends_at', 'status', 'notes',
@@ -108,7 +109,9 @@ class Appointment extends Model
                 .'Endereço: Rua Leopoldo Macedo, 349, Sala 01, Ponte Alta, Aparecida - SP.'
                 ."\nComo chegar: https://www.google.com/maps?cid=17307561992857966510";
 
-        $text = $intro."\n\n".$instructions."\n\nQualquer dúvida, é só responder esta mensagem.";
+        $text = $intro."\n\n".$instructions
+            ."\n\nPrecisa mudar o horário? Reagende por aqui: ".$this->customerRescheduleUrl()
+            ."\n\nQualquer dúvida, é só responder esta mensagem.";
 
         return 'https://wa.me/55'.$phone.'?text='.rawurlencode($text);
     }
@@ -141,11 +144,20 @@ class Appointment extends Model
         ];
     }
 
-    /** O cliente cancela sozinho só com antecedência mínima (config agenda.cancel_min_hours). */
-    public function canBeCancelledByCustomer(): bool
+    /** O cliente reagenda sozinho só com antecedência mínima (config agenda.cancel_min_hours). */
+    public function canBeRescheduledByCustomer(): bool
     {
         return in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED], true)
             && $this->starts_at->gt(now()->addHours(config('agenda.cancel_min_hours')));
+    }
+
+    /**
+     * Link que o cliente recebe (e-mail/WhatsApp) para trocar o horário sozinho, sem login.
+     * Assinado com a APP_KEY: trocar o número do agendamento na URL invalida o link.
+     */
+    public function customerRescheduleUrl(): string
+    {
+        return URL::signedRoute('booking.reschedule', $this);
     }
 
     protected function casts(): array

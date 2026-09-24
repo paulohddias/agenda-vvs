@@ -57,7 +57,13 @@
             </div>
             @endif
 
-            <p>Precisa reagendar ou tem alguma dúvida? Fale com a gente:</p>
+            @if ($rescheduleUrl)
+                <p style="text-align:center; margin:20px 0;">
+                    <a href="{{ $rescheduleUrl }}" style="display:inline-block; background:#2C3A49; color:#ffffff; text-decoration:none; font-weight:bold; font-size:14px; padding:12px 22px; border-radius:6px;">Precisa mudar o horário? Reagende aqui</a>
+                </p>
+            @endif
+
+            <p>Tem alguma dúvida? Fale com a gente:</p>
             <p>
                 WhatsApp: (12) 3600-5110<br>
                 E-mail: certificacaovvs@gmail.com

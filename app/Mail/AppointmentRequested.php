@@ -42,6 +42,7 @@ class AppointmentRequested extends Mailable
                 'closing' => 'Seu horário já está <strong>reservado</strong>. Esperamos por você!',
                 'previousStart' => null,
                 'cancelled' => false,
+                'rescheduleUrl' => $this->appointment->customerRescheduleUrl(),
             ],
         );
     }

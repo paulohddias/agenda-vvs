@@ -27,53 +27,10 @@
         @else
             {{-- 2. Dia: um calendário de mês normal, com seta pra trocar de mês. --}}
             <h2 class="mt-8 font-medium text-gray-800">1. Escolha o dia</h2>
-            <div class="mt-3 bg-white rounded-lg shadow-sm p-4 sm:p-6">
-                <div class="flex items-center justify-between mb-4">
-                    @if ($prevMonth)
-                        <a href="{{ route('home', ['product' => $product->id, 'month' => $prevMonth->format('Y-m')]) }}"
-                           class="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100" aria-label="Mês anterior">&larr;</a>
-                    @else
-                        <span class="w-10 h-10 flex items-center justify-center text-gray-300">&larr;</span>
-                    @endif
-
-                    <span class="text-lg font-medium text-gray-800">{{ ucfirst($month->translatedFormat('F \d\e Y')) }}</span>
-
-                    @if ($nextMonth)
-                        <a href="{{ route('home', ['product' => $product->id, 'month' => $nextMonth->format('Y-m')]) }}"
-                           class="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100" aria-label="Próximo mês">&rarr;</a>
-                    @else
-                        <span class="w-10 h-10 flex items-center justify-center text-gray-300">&rarr;</span>
-                    @endif
-                </div>
-
-                <div class="grid grid-cols-7 text-center text-sm text-gray-400 mb-2">
-                    @foreach (['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as $weekdayLetter)
-                        <div>{{ $weekdayLetter }}</div>
-                    @endforeach
-                </div>
-
-                <div class="grid grid-cols-7 gap-y-2">
-                    @foreach ($calendarWeeks as $week)
-                        @foreach ($week as $cell)
-                            @if ($cell === null)
-                                <div></div>
-                            @elseif ($cell['available'])
-                                @php $cellDate = $cell['date']->toDateString(); @endphp
-                                <div class="flex justify-center">
-                                    <a href="{{ route('home', ['product' => $product->id, 'date' => $cellDate]) }}"
-                                       class="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full font-medium transition {{ $cellDate === $selectedDate ? 'bg-brand-slate text-white' : 'text-gray-800 hover:bg-brand-green-light' }}">
-                                        {{ $cell['date']->day }}
-                                    </a>
-                                </div>
-                            @else
-                                <div class="flex justify-center">
-                                    <div class="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center text-gray-300">{{ $cell['date']->day }}</div>
-                                </div>
-                            @endif
-                        @endforeach
-                    @endforeach
-                </div>
-            </div>
+            @include('booking.partials.calendar', [
+                'monthUrl' => fn ($m) => route('home', ['product' => $product->id, 'month' => $m->format('Y-m')]),
+                'dayUrl' => fn ($d) => route('home', ['product' => $product->id, 'date' => $d]),
+            ])
 
             @if ($selectedDate === null)
                 <div class="mt-6 bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">

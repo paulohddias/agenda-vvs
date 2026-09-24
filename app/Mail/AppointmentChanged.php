@@ -43,6 +43,7 @@ class AppointmentChanged extends Mailable
                 'appointment' => $this->appointment,
                 'previousStart' => $this->change === self::RESCHEDULED ? $this->previousStart : null,
                 'cancelled' => $this->change === self::CANCELLED,
+                'rescheduleUrl' => $this->change === self::CANCELLED ? null : $this->appointment->customerRescheduleUrl(),
             ],
         );
     }
