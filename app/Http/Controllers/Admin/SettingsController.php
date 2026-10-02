@@ -17,6 +17,7 @@ class SettingsController extends Controller
             'slotStepMinutes' => config('agenda.slot_step_minutes'),
             'maxDaysAhead' => config('agenda.max_days_ahead'),
             'cancelMinHours' => config('agenda.cancel_min_hours'),
+            'alertMinutesBefore' => config('agenda.alert_minutes_before'),
         ]);
     }
 
@@ -27,6 +28,7 @@ class SettingsController extends Controller
             'slot_step_minutes' => ['required', 'integer', 'min:5', 'max:240'],
             'max_days_ahead' => ['required', 'integer', 'min:1', 'max:365'],
             'cancel_min_hours' => ['required', 'integer', 'min:0', 'max:168'],
+            'alert_minutes_before' => ['required', 'integer', 'min:0', 'max:120'],
         ]);
 
         foreach ($data as $key => $value) {

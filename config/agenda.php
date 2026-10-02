@@ -17,4 +17,7 @@ return [
     /* O cliente só pode reagendar sozinho (link do e-mail/WhatsApp) até X horas antes do horário marcado. */
     'cancel_min_hours' => 2,
 
+    /* Quantos minutos antes de cada atendimento o painel avisa a equipe (0 = sem aviso). */
+    'alert_minutes_before' => 5,
+
 ];

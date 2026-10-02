@@ -37,6 +37,18 @@
                     <x-input-error :messages="$errors->get('cancel_min_hours')" class="mt-2" />
                 </div>
 
+                <div>
+                    <x-input-label for="alert_minutes_before" value="Avisar no painel quantos minutos antes do atendimento" />
+                    <p class="text-sm text-gray-500 mt-0.5">Com o painel aberto, aparece um aviso com som quando faltar esse tempo para um cliente agendado. 0 = sem aviso.</p>
+                    <x-text-input id="alert_minutes_before" name="alert_minutes_before" type="number" min="0" max="120" class="block mt-1 w-40" :value="old('alert_minutes_before', $alertMinutesBefore)" required />
+                    <x-input-error :messages="$errors->get('alert_minutes_before')" class="mt-2" />
+                    <button type="button" data-vvs-enable-notifications
+                            class="mt-2 text-sm font-medium text-brand-blue hover:underline">
+                        Também mostrar como notificação do Windows/celular neste navegador
+                    </button>
+                    <p data-vvs-notifications-status class="mt-1 text-xs text-gray-500"></p>
+                </div>
+
                 <div class="flex justify-end pt-2">
                     <x-primary-button>Salvar</x-primary-button>
                 </div>

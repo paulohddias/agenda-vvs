@@ -460,7 +460,7 @@ class AdminPanelTest extends TestCase
         $this->actingAs($admin)->get(route('admin.settings.edit'))->assertOk();
 
         $this->actingAs($admin)->put(route('admin.settings.update'), [
-            'min_notice_minutes' => 5, 'slot_step_minutes' => 15, 'max_days_ahead' => 10, 'cancel_min_hours' => 1,
+            'min_notice_minutes' => 5, 'slot_step_minutes' => 15, 'max_days_ahead' => 10, 'cancel_min_hours' => 1, 'alert_minutes_before' => 10,
         ])->assertSessionHas('status');
 
         $this->assertSame('5', \App\Models\Setting::allCached()['min_notice_minutes']);
@@ -470,8 +470,51 @@ class AdminPanelTest extends TestCase
     public function test_agenda_settings_validation_rejects_out_of_range_values(): void
     {
         $this->actingAs($this->admin())->put(route('admin.settings.update'), [
-            'min_notice_minutes' => -1, 'slot_step_minutes' => 1, 'max_days_ahead' => 0, 'cancel_min_hours' => 999,
-        ])->assertSessionHasErrors(['min_notice_minutes', 'slot_step_minutes', 'max_days_ahead', 'cancel_min_hours']);
+            'min_notice_minutes' => -1, 'slot_step_minutes' => 1, 'max_days_ahead' => 0, 'cancel_min_hours' => 999, 'alert_minutes_before' => 500,
+        ])->assertSessionHasErrors(['min_notice_minutes', 'slot_step_minutes', 'max_days_ahead', 'cancel_min_hours', 'alert_minutes_before']);
+    }
+
+    public function test_upcoming_alerts_list_only_appointments_within_the_configured_minutes(): void
+    {
+        $now = now()->setTime(14, 0);
+        \Illuminate\Support\Carbon::setTestNow($now);
+        config(['agenda.alert_minutes_before' => 5]);
+
+        $staff = Staff::create(['name' => 'Atendimento']);
+        $product = Product::create(['name' => 'e-CNPJ A1', 'duration_minutes' => 30]);
+        $make = fn (string $time, string $name, string $status = Appointment::STATUS_CONFIRMED) => Appointment::create([
+            'product_id' => $product->id, 'staff_id' => $staff->id,
+            'starts_at' => $now->copy()->setTimeFromTimeString($time),
+            'ends_at' => $now->copy()->setTimeFromTimeString($time)->addMinutes(30),
+            'status' => $status, 'holder_name' => $name,
+        ]);
+        $soon = $make('14:04', 'Chega Logo');
+        $make('14:30', 'Ainda Longe');
+        $make('14:03', 'Foi Cancelado', Appointment::STATUS_CANCELLED);
+
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->getJson(route('admin.alerts.upcoming'))
+            ->assertOk()
+            ->assertJsonCount(1, 'alerts')
+            ->assertJsonPath('alerts.0.holderName', 'Chega Logo')
+            ->assertJsonPath('alerts.0.minutesLeft', 4)
+            ->assertJsonPath('alerts.0.key', $soon->id.'@'.$soon->starts_at->format('Y-m-d H:i'));
+
+        config(['agenda.alert_minutes_before' => 0]);
+        $this->actingAs($admin)->getJson(route('admin.alerts.upcoming'))->assertOk()->assertJsonCount(0, 'alerts');
+
+        $this->actingAs(User::factory()->create())->getJson(route('admin.alerts.upcoming'))->assertForbidden();
+    }
+
+    public function test_admin_pages_carry_the_alert_container(): void
+    {
+        Staff::create(['name' => 'Atendimento']);
+
+        $this->actingAs($this->admin())->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('id="vvs-alerts"', false)
+            ->assertSee(route('admin.alerts.upcoming'), false);
     }
 
     public function test_saved_setting_overrides_the_config_default(): void
