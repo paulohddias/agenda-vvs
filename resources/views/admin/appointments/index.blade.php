@@ -12,6 +12,7 @@
                 close() { this.open = false; },
              }">
             <x-flash />
+            <x-auto-refresh />
 
             @include('admin.appointments._toolbar')
 

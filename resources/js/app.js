@@ -327,4 +327,78 @@ const VVSAlerts = {
     },
 };
 
-document.addEventListener('DOMContentLoaded', () => VVSAlerts.init());
+/**
+ * Agenda e dashboard recarregam sozinhos quando algum agendamento muda (novo, reagendado,
+ * cancelado, editado). Pergunta a versão ao servidor a cada minuto e só recarrega se ela
+ * mudou — e nunca com a janela de detalhes aberta ou com alguém digitando; nesses casos
+ * espera e tenta de novo. A posição da rolagem é mantida.
+ */
+const VVSAutoRefresh = {
+    POLL_MS: 60000,
+    SCROLL_KEY: 'vvs-scroll',
+
+    init() {
+        this.marker = document.querySelector('[data-vvs-auto-refresh]');
+        if (! this.marker) return;
+
+        this.restoreScroll();
+        this.version = this.marker.dataset.version;
+        this.pendingReload = false;
+
+        setInterval(() => this.tick(), this.POLL_MS);
+        // Aba que ficou em segundo plano: confere assim que voltar a ficar visível.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') this.tick();
+        });
+    },
+
+    async tick() {
+        if (document.visibilityState !== 'visible') return;
+
+        if (! this.pendingReload) {
+            try {
+                const response = await fetch(this.marker.dataset.url, { headers: { Accept: 'application/json' } });
+                if (! response.ok) return;
+                const data = await response.json();
+                this.pendingReload = data.version !== this.version;
+            } catch (e) {
+                return;
+            }
+        }
+
+        if (this.pendingReload && ! this.isBusy()) {
+            this.saveScroll();
+            window.location.reload();
+        }
+    },
+
+    /** Janela de detalhes aberta ou cursor num campo: recarregar agora faria perder o que a pessoa está fazendo. */
+    isBusy() {
+        const modalOpen = [...document.querySelectorAll('[data-vvs-modal]')].some((el) => el.offsetParent !== null || getComputedStyle(el).display !== 'none');
+        const active = document.activeElement;
+        const typing = active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName);
+
+        return modalOpen || typing;
+    },
+
+    saveScroll() {
+        try {
+            sessionStorage.setItem(this.SCROLL_KEY, JSON.stringify({ path: location.pathname + location.search, y: window.scrollY }));
+        } catch (e) {}
+    },
+
+    restoreScroll() {
+        try {
+            const saved = JSON.parse(sessionStorage.getItem(this.SCROLL_KEY) || 'null');
+            sessionStorage.removeItem(this.SCROLL_KEY);
+            if (saved && saved.path === location.pathname + location.search) {
+                window.scrollTo(0, saved.y);
+            }
+        } catch (e) {}
+    },
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    VVSAlerts.init();
+    VVSAutoRefresh.init();
+});

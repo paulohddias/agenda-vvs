@@ -1,4 +1,4 @@
-<div x-show="open" x-cloak
+<div x-show="open" x-cloak data-vvs-modal
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
      @keydown.escape.window="close()">
     <div @click.outside="close()" x-show="open" x-transition

@@ -517,6 +517,32 @@ class AdminPanelTest extends TestCase
             ->assertSee(route('admin.alerts.upcoming'), false);
     }
 
+    public function test_agenda_version_changes_when_an_appointment_is_created_or_changed(): void
+    {
+        $admin = $this->admin();
+        $staff = Staff::create(['name' => 'Atendimento']);
+        $product = Product::create(['name' => 'Corte', 'duration_minutes' => 30]);
+
+        $version = fn () => $this->actingAs($admin)->getJson(route('admin.agenda.version'))->assertOk()->json('version');
+
+        $empty = $version();
+
+        $appointment = Appointment::create([
+            'product_id' => $product->id, 'staff_id' => $staff->id,
+            'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addMinutes(30), 'holder_name' => 'Cliente',
+        ]);
+        $created = $version();
+        $this->assertNotSame($empty, $created);
+        $this->assertSame($created, $version()); // nada mudou: mesma versão, não recarrega
+
+        $this->travel(5)->seconds();
+        $appointment->update(['status' => Appointment::STATUS_CANCELLED]);
+        $this->assertNotSame($created, $version());
+
+        $this->actingAs($admin)->get(route('admin.appointments.index'))
+            ->assertOk()->assertSee('data-vvs-auto-refresh', false);
+    }
+
     public function test_saved_setting_overrides_the_config_default(): void
     {
         \App\Models\Setting::set('min_notice_minutes', '5');

@@ -54,6 +54,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Consultado a cada 30s pelo painel aberto, para avisar de cliente prestes a chegar.
     Route::get('alertas/proximos', [Admin\UpcomingAlertController::class, 'index'])->name('alerts.upcoming');
 
+    // Consultado a cada 1 min pela agenda/dashboard abertos: recarregam só se a versão mudou.
+    Route::get('agenda/versao', fn () => response()->json(['version' => \App\Models\Appointment::agendaVersion()]))
+        ->name('agenda.version');
+
     Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
 });

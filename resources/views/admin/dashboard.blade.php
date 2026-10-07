@@ -6,6 +6,7 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <x-flash />
+            <x-auto-refresh />
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">

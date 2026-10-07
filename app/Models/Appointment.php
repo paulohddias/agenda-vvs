@@ -144,6 +144,17 @@ class Appointment extends Model
         ];
     }
 
+    /**
+     * Muda sempre que algum agendamento é criado, editado, reagendado ou muda de status.
+     * O painel compara com a versão que já está na tela para saber se precisa recarregar.
+     */
+    public static function agendaVersion(): string
+    {
+        $row = self::query()->selectRaw('COUNT(*) AS total, MAX(updated_at) AS last_change')->first();
+
+        return $row->total.'-'.$row->last_change;
+    }
+
     /** O cliente reagenda sozinho só com antecedência mínima (config agenda.cancel_min_hours). */
     public function canBeRescheduledByCustomer(): bool
     {
