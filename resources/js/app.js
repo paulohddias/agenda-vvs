@@ -398,7 +398,42 @@ const VVSAutoRefresh = {
     },
 };
 
+/**
+ * Linha vermelha do "agora" na agenda (visões Dia e Semana): o servidor desenha na posição
+ * do momento em que a página abriu; aqui ela vai descendo sozinha, sem recarregar a página.
+ */
+const VVSNowLine = {
+    TICK_MS: 30000,
+
+    init() {
+        this.lines = [...document.querySelectorAll('[data-vvs-now-line]')];
+        if (this.lines.length === 0) return;
+
+        this.update();
+        setInterval(() => this.update(), this.TICK_MS);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') this.update();
+        });
+    },
+
+    update() {
+        const now = Date.now();
+
+        for (const line of this.lines) {
+            const start = Date.parse(line.dataset.start);
+            const end = Date.parse(line.dataset.end);
+            const inside = now >= start && now <= end;
+
+            line.classList.toggle('hidden', ! inside);
+            if (inside) {
+                line.style.top = `${((now - start) / 60000) * parseFloat(line.dataset.pxPerMinute)}px`;
+            }
+        }
+    },
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     VVSAlerts.init();
     VVSAutoRefresh.init();
+    VVSNowLine.init();
 });

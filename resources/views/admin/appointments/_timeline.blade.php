@@ -24,8 +24,14 @@
                             <div class="absolute left-0 right-0 border-t border-gray-100" style="top: {{ $hour['top'] }}px;"></div>
                         @endforeach
 
-                        @if ($column['nowOffset'] !== null)
-                            <div class="absolute left-0 right-0 z-20 flex items-center gap-1" style="top: {{ $column['nowOffset'] }}px;">
+                        @if ($column['nowLine'] !== null)
+                            {{-- Sempre presente na coluna de hoje; fica escondida fora do expediente e o JS a move a cada 30s. --}}
+                            <div class="absolute left-0 right-0 z-20 flex items-center gap-1 {{ $column['nowOffset'] === null ? 'hidden' : '' }}"
+                                 style="top: {{ $column['nowOffset'] ?? 0 }}px;"
+                                 data-vvs-now-line
+                                 data-start="{{ $column['nowLine']['start'] }}"
+                                 data-end="{{ $column['nowLine']['end'] }}"
+                                 data-px-per-minute="{{ $column['nowLine']['pxPerMinute'] }}">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 -ms-0.5"></span>
                                 <div class="flex-1 border-t-2 border-red-500"></div>
                             </div>

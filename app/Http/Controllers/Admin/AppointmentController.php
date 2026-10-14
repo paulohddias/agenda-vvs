@@ -115,6 +115,12 @@ class AppointmentController extends Controller
                 'nowOffset' => $d->isToday() && $now->between($dayStart, $dayEnd)
                     ? $dayStart->diffInMinutes($now) * self::PX_PER_MINUTE
                     : null,
+                // Para o navegador ir movendo a linha sozinho (resources/js/app.js → VVSNowLine).
+                'nowLine' => $d->isToday() ? [
+                    'start' => $dayStart->toIso8601String(),
+                    'end' => $dayEnd->toIso8601String(),
+                    'pxPerMinute' => self::PX_PER_MINUTE,
+                ] : null,
             ];
         });
 
